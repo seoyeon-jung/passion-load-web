@@ -9,23 +9,19 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token =
-    typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('access_token')
+    : null;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // 개발 환경 임시 헤더 (백엔드 연결 테스트용)
+  if (process.env.NODE_ENV === 'development') {
+    config.headers['x-organization-id'] = process.env.NEXT_PUBLIC_DEV_ORG_ID ?? '';
+    config.headers['x-user-role'] = process.env.NEXT_PUBLIC_DEV_ROLE ?? 'ADMIN';
+    config.headers['x-user-id'] = process.env.NEXT_PUBLIC_DEV_USER_ID ?? '';
+  }
+
   return config;
 });
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  },
-);
