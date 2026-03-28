@@ -2,7 +2,7 @@
 export type Role = 'ADMIN' | 'TEACHER';
 
 // 세션
-export type SessionStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED';
+export type SessionStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED';
 
 // 과제
 export type AssignmentType = 'TASK' | 'DAILY_CHECK';
