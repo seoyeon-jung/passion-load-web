@@ -20,7 +20,7 @@ export function Header() {
   const breadcrumb = useBreadcrumb();
 
   return (
-    <header className="flex h-[65px] items-center justify-between border-b bg-white px-6">
+    <header className="flex h-[65px] items-center justify-between border-b border-gray-100 bg-white px-6">
       <div className="flex items-center gap-1 text-sm text-gray-500">
         <span>대시보드</span>
         {breadcrumb.map((crumb, i) => (

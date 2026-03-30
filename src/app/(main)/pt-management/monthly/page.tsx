@@ -7,21 +7,10 @@ import { SessionNavigator } from '@/features/session/components/session-navigato
 import { DailySessionTable } from '@/features/assignment/components/daily-session-table';
 import { PageHeader } from '@/components/common/page-header';
 import { Session } from '@/features/session/types/session';
+import { useAssignments } from '@/features/assignment/hooks/use-assignments';
+import { useStudents } from '@/features/student/hooks/use-students';
 import { TrendingUp, FileText } from 'lucide-react';
-
-// 임시 더미 데이터 - API 연동 후 제거
-const DUMMY_STUDENT_INFO = {
-  name: '박지은',
-  school: '반포고',
-  grade: '3학년',
-  kpi: {
-    achievementRate: 92,
-    completedDays: 18,
-    totalDays: 20,
-    feedbackMissing: 3,
-    enrollMonth: '4월',
-  },
-};
+import dayjs from 'dayjs';
 
 function KpiCard({
   label,
@@ -35,20 +24,104 @@ function KpiCard({
   color: 'blue' | 'green' | 'red' | 'purple';
 }) {
   const colorMap = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    red: 'bg-red-50 text-red-500',
-    purple: 'bg-purple-50 text-purple-600',
+    blue: { bg: 'bg-blue-50', text: 'text-blue-600' },
+    green: { bg: 'bg-green-50', text: 'text-green-600' },
+    red: { bg: 'bg-red-50', text: 'text-red-500' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-600' },
   };
 
   return (
-    <div className={`flex-1 rounded-lg p-5 ${colorMap[color].split(' ')[0]}`}>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${colorMap[color].split(' ')[1]}`}>
+    <div className={`flex-1 rounded-xl p-5 ${colorMap[color].bg}`}>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className={`mt-2 text-3xl font-bold ${colorMap[color].text}`}>
         {value}
-        {sub && <span className="text-lg text-gray-400">{sub}</span>}
+        {sub && (
+          <span className="ml-0.5 text-base font-normal text-gray-400">
+            {sub}
+          </span>
+        )}
       </p>
     </div>
+  );
+}
+
+function StudentContent({
+  studentId,
+  studentName,
+  selectedSession,
+  onSelectSession,
+}: {
+  studentId: string;
+  studentName: string;
+  selectedSession: Session | null;
+  onSelectSession: (session: Session) => void;
+}) {
+  const { data: assignments = [] } = useAssignments({
+    sessionId: selectedSession?.id,
+    studentId,
+  });
+
+  const total = assignments.length;
+  const completed = assignments.filter((a) => a.status === 'COMPLETED').length;
+  const achievementRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const enrollMonth = selectedSession
+    ? `${dayjs(selectedSession.date).month() + 1}월`
+    : '-';
+
+  return (
+    <>
+      {/* 학생 정보 헤더 */}
+      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <span className="text-xl font-bold text-gray-900">{studentName}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-1.5 rounded border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
+            <TrendingUp size={12} />
+            성적 확인 연동
+          </button>
+          <button className="flex items-center gap-1.5 rounded bg-blue-500 px-3 py-1.5 text-xs text-white hover:bg-blue-600">
+            <FileText size={12} />
+            리포트 전송
+          </button>
+        </div>
+      </div>
+
+      {/* KPI 카드 */}
+      <div className="flex gap-3 border-b border-gray-100 px-6 py-4">
+        <KpiCard
+          label="과제 달성률"
+          value={`${achievementRate}%`}
+          color="blue"
+        />
+        <KpiCard
+          label="과제 완료일"
+          value={`${completed}`}
+          sub={`/${total}일`}
+          color="green"
+        />
+        <KpiCard label="피드백 누락" value="0건" color="red" />
+        <KpiCard label="재등록 월" value={enrollMonth} color="purple" />
+      </div>
+
+      {/* 세션 네비게이터 */}
+      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3">
+        <h2 className="text-sm font-semibold text-gray-900">일별 관리 세션</h2>
+        <SessionNavigator onSelectSession={onSelectSession} />
+      </div>
+
+      {/* 과제 테이블 */}
+      {selectedSession ? (
+        <DailySessionTable
+          sessionId={selectedSession.id}
+          studentId={studentId}
+        />
+      ) : (
+        <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+          세션을 선택하세요.
+        </div>
+      )}
+    </>
   );
 }
 
@@ -56,6 +129,12 @@ function MonthlyContent() {
   const searchParams = useSearchParams();
   const studentId = searchParams.get('studentId');
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+
+  const { data: students = [] } = useStudents({
+    organizationId: '11111111-1111-1111-1111-111111111111',
+  });
+
+  const selectedStudent = students.find((s) => s.id === studentId);
 
   const handleSelectSession = useCallback((session: Session) => {
     setSelectedSession(session);
@@ -67,78 +146,16 @@ function MonthlyContent() {
         title="공부 PT 관리"
         description="학생별 일별 과제 체크 및 학습 피드백을 관리합니다."
       />
-      <div className="flex flex-1 overflow-hidden rounded-lg border bg-white">
+      <div className="flex flex-1 overflow-hidden rounded-lg border border-gray-100 bg-white">
         <StudentListPanel />
         <div className="flex flex-1 flex-col overflow-hidden">
           {studentId ? (
-            <>
-              {/* 학생 정보 헤더 */}
-              <div className="flex items-center justify-between border-b px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl font-bold text-gray-900">
-                    {DUMMY_STUDENT_INFO.name}
-                  </span>
-                  <span className="text-sm text-gray-400">
-                    {DUMMY_STUDENT_INFO.school} {DUMMY_STUDENT_INFO.grade}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-1.5 rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
-                    <TrendingUp size={12} />
-                    성적 확인 연동
-                  </button>
-                  <button className="flex items-center gap-1.5 rounded bg-blue-500 px-3 py-1.5 text-xs text-white hover:bg-blue-600">
-                    <FileText size={12} />
-                    리포트 전송
-                  </button>
-                </div>
-              </div>
-
-              {/* KPI 카드 */}
-              <div className="flex gap-4 border-b px-6 py-4">
-                <KpiCard
-                  label="과제 달성률"
-                  value={`${DUMMY_STUDENT_INFO.kpi.achievementRate}%`}
-                  color="blue"
-                />
-                <KpiCard
-                  label="과제 완료일"
-                  value={`${DUMMY_STUDENT_INFO.kpi.completedDays}`}
-                  sub={`/${DUMMY_STUDENT_INFO.kpi.totalDays}일`}
-                  color="green"
-                />
-                <KpiCard
-                  label="피드백 누락"
-                  value={`${DUMMY_STUDENT_INFO.kpi.feedbackMissing}건`}
-                  color="red"
-                />
-                <KpiCard
-                  label="자동록 월"
-                  value={DUMMY_STUDENT_INFO.kpi.enrollMonth}
-                  color="purple"
-                />
-              </div>
-
-              {/* 세션 네비게이터 */}
-              <div className="flex items-center justify-between border-b px-6 py-3">
-                <h2 className="text-sm font-semibold text-gray-900">
-                  일별 관리 세션
-                </h2>
-                <SessionNavigator onSelectSession={handleSelectSession} />
-              </div>
-
-              {/* 과제 테이블 */}
-              {selectedSession ? (
-                <DailySessionTable
-                  sessionId={selectedSession.id}
-                  studentId={studentId}
-                />
-              ) : (
-                <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
-                  세션을 선택하세요.
-                </div>
-              )}
-            </>
+            <StudentContent
+              studentId={studentId}
+              studentName={selectedStudent?.name ?? ''}
+              selectedSession={selectedSession}
+              onSelectSession={handleSelectSession}
+            />
           ) : (
             <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
               학생을 선택하세요.
