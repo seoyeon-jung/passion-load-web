@@ -56,7 +56,10 @@ export function CreateAssignmentModal({
         title: values.title,
         body: values.body,
         assignmentDate: values.assignmentDate,
-        dueDate: values.dueDate ?? null,
+        dueDate:
+          values.dueDate && values.dueDate.trim() !== ''
+            ? values.dueDate
+            : null,
         status: values.status as AssignmentStatus,
         subject: values.subject ?? null,
         categoryType: values.categoryType ?? null,
