@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useSessions } from '../hooks/use-sessions';
 import { CreateSessionModal } from './create-session-modal';
@@ -8,29 +8,55 @@ import { Session } from '../types/session';
 import { formatMonth } from '@/lib/utils/format';
 
 type Props = {
-  selectedSessionId: string | null;
   onSelectSession: (session: Session) => void;
 };
 
+function getClosestIndex(sessions: Session[]): number {
+  if (sessions.length === 0) return 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const closest = sessions.reduce((prev, curr) => {
+    const prevDiff = Math.abs(
+      new Date(prev.date).getTime() - new Date(today).getTime(),
+    );
+    const currDiff = Math.abs(
+      new Date(curr.date).getTime() - new Date(today).getTime(),
+    );
+    return currDiff < prevDiff ? curr : prev;
+  });
+  return sessions.indexOf(closest);
+}
+
 export function SessionNavigator({ onSelectSession }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-
   const { data: sessions = [] } = useSessions();
+  const prevLengthRef = useRef(0);
+
+  const initialIndex = useMemo(() => getClosestIndex(sessions), [sessions]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const currentSession = sessions[currentIndex] ?? null;
 
+  useEffect(() => {
+    if (sessions.length > 0 && prevLengthRef.current === 0) {
+      setCurrentIndex(initialIndex);
+      onSelectSession(sessions[initialIndex]);
+    }
+    prevLengthRef.current = sessions.length;
+  }, [sessions.length, initialIndex, onSelectSession]);
+
   const handlePrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((i) => i - 1);
-      onSelectSession(sessions[currentIndex - 1]);
+      const newIndex = currentIndex - 1;
+      setCurrentIndex(newIndex);
+      onSelectSession(sessions[newIndex]);
     }
   };
 
   const handleNext = () => {
     if (currentIndex < sessions.length - 1) {
-      setCurrentIndex((i) => i + 1);
-      onSelectSession(sessions[currentIndex + 1]);
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+      onSelectSession(sessions[newIndex]);
     }
   };
 
@@ -53,7 +79,7 @@ export function SessionNavigator({ onSelectSession }: Props) {
           >
             <ChevronLeft size={14} />
           </button>
-          <span className="min-w-[64px] text-center text-xs font-medium text-gray-700">
+          <span className="min-w-20 text-center text-xs font-medium text-gray-700">
             {currentSession ? formatMonth(currentSession.date) : '-'}
           </span>
           <button
