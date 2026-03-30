@@ -14,7 +14,9 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 
 function NavGroupItem({ group }: { group: NavGroup }) {
   const pathname = usePathname();
-  const isGroupActive = group.items.some((item) => pathname.startsWith(item.href));
+  const isGroupActive = group.items.some((item) =>
+    pathname.startsWith(item.href),
+  );
   const [open, setOpen] = useState(isGroupActive);
 
   return (
@@ -62,14 +64,16 @@ function NavGroupItem({ group }: { group: NavGroup }) {
 
 export function Sidebar() {
   return (
-    <aside className="flex w-[200px] flex-col border-r bg-white">
-      <div className="flex h-[65px] items-center border-b px-4">
+    <aside className="flex w-[200px] flex-col border-r border-gray-100 bg-white">
+      <div className="flex h-[65px] items-center border-b border-gray-100 px-4">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded bg-red-500 text-xs font-bold text-white">
             열
           </div>
           <div>
-            <p className="text-xs font-bold leading-none text-gray-900">열정스토리</p>
+            <p className="text-xs font-bold leading-none text-gray-900">
+              열정스토리
+            </p>
             <p className="text-[10px] text-gray-400">ACADEMY</p>
           </div>
         </div>
