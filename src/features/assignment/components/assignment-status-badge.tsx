@@ -9,9 +9,18 @@ const STATUS_MAP: Record<
   AssignmentStatus,
   { label: string; className: string }
 > = {
-  SCHEDULED: { label: '예정', className: 'bg-gray-100 text-gray-600' },
-  COMPLETED: { label: '완료', className: 'bg-blue-50 text-blue-600' },
-  INCOMPLETE: { label: '미이수', className: 'bg-red-50 text-red-500' },
+  SCHEDULED: {
+    label: '예정',
+    className: 'bg-gray-100 text-gray-500 border border-gray-200',
+  },
+  COMPLETED: {
+    label: '완료',
+    className: 'bg-blue-50 text-blue-500 border border-blue-100',
+  },
+  INCOMPLETE: {
+    label: '미이수',
+    className: 'bg-red-50 text-red-500 border border-red-100',
+  },
 };
 
 type Props = {
@@ -41,9 +50,11 @@ export function AssignmentStatusBadge({ status, onChange, disabled }: Props) {
       <button
         onClick={() => !disabled && setOpen((prev) => !prev)}
         className={cn(
-          'flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
+          'flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-opacity',
           className,
-          disabled ? 'cursor-default opacity-60' : 'cursor-pointer',
+          disabled
+            ? 'cursor-default opacity-60'
+            : 'cursor-pointer hover:opacity-80',
         )}
       >
         {label}
@@ -51,7 +62,7 @@ export function AssignmentStatusBadge({ status, onChange, disabled }: Props) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 w-20 rounded border border-gray-200 bg-white shadow-sm">
+        <div className="absolute left-0 top-full z-10 mt-1 w-20 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
           {(Object.keys(STATUS_MAP) as AssignmentStatus[]).map((s) => (
             <button
               key={s}
@@ -60,8 +71,8 @@ export function AssignmentStatusBadge({ status, onChange, disabled }: Props) {
                 setOpen(false);
               }}
               className={cn(
-                'flex w-full items-center px-2 py-1.5 text-xs hover:bg-gray-50',
-                s === status ? 'font-medium' : '',
+                'flex w-full items-center px-3 py-2 text-xs transition-colors hover:bg-gray-50',
+                s === status ? 'font-medium' : 'text-gray-600',
               )}
             >
               {STATUS_MAP[s].label}
