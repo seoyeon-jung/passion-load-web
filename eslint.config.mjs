@@ -10,6 +10,7 @@ const eslintConfig = defineConfig([
     rules: {
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/set-state-in-effect': 'off',
+      '@tailwindcss/no-unnecessary-arbitrary-value': 'off',
     },
   },
 ]);
