@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/common/page-header';
 import { Session } from '@/features/session/types/session';
 import { useAssignments } from '@/features/assignment/hooks/use-assignments';
 import { useStudents } from '@/features/student/hooks/use-students';
+import { CreateReportModal } from '@/features/report/components/create-report-modal';
+import { Toast, useToast } from '@/components/common/toast';
 import { TrendingUp, FileText } from 'lucide-react';
 import dayjs from 'dayjs';
 
@@ -50,11 +52,13 @@ function StudentContent({
   studentName,
   selectedSession,
   onSelectSession,
+  onOpenReport,
 }: {
   studentId: string;
   studentName: string;
   selectedSession: Session | null;
   onSelectSession: (session: Session) => void;
+  onOpenReport: () => void;
 }) {
   const { data: assignments = [] } = useAssignments({
     sessionId: selectedSession?.id,
@@ -70,7 +74,6 @@ function StudentContent({
 
   return (
     <>
-      {/* 학생 정보 헤더 */}
       <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold text-gray-900">{studentName}</span>
@@ -80,14 +83,16 @@ function StudentContent({
             <TrendingUp size={12} />
             성적 확인 연동
           </button>
-          <button className="flex items-center gap-1.5 rounded bg-blue-500 px-3 py-1.5 text-xs text-white hover:bg-blue-600">
+          <button
+            onClick={onOpenReport}
+            className="flex items-center gap-1.5 rounded bg-blue-500 px-3 py-1.5 text-xs text-white hover:bg-blue-600"
+          >
             <FileText size={12} />
             리포트 전송
           </button>
         </div>
       </div>
 
-      {/* KPI 카드 */}
       <div className="flex gap-3 border-b border-gray-100 px-6 py-4">
         <KpiCard
           label="과제 달성률"
@@ -104,13 +109,11 @@ function StudentContent({
         <KpiCard label="재등록 월" value={enrollMonth} color="purple" />
       </div>
 
-      {/* 세션 네비게이터 */}
       <div className="flex items-center justify-between border-b border-gray-100 px-6 py-3">
         <h2 className="text-sm font-semibold text-gray-900">일별 관리 세션</h2>
         <SessionNavigator onSelectSession={onSelectSession} />
       </div>
 
-      {/* 과제 테이블 */}
       {selectedSession ? (
         <DailySessionTable
           sessionId={selectedSession.id}
@@ -125,10 +128,15 @@ function StudentContent({
   );
 }
 
-function MonthlyContent() {
+function MonthlyContent({
+  showToast,
+}: {
+  showToast: (message: string, type?: 'success' | 'error') => void;
+}) {
   const searchParams = useSearchParams();
   const studentId = searchParams.get('studentId');
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const { data: students = [] } = useStudents({
     organizationId: '11111111-1111-1111-1111-111111111111',
@@ -155,6 +163,7 @@ function MonthlyContent() {
               studentName={selectedStudent?.name ?? ''}
               selectedSession={selectedSession}
               onSelectSession={handleSelectSession}
+              onOpenReport={() => setReportModalOpen(true)}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
@@ -163,14 +172,32 @@ function MonthlyContent() {
           )}
         </div>
       </div>
+
+      {studentId && (
+        <CreateReportModal
+          open={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          studentId={studentId}
+          sessionId={selectedSession?.id ?? null}
+          onSuccess={() => showToast('리포트 전송이 완료되었습니다.')}
+        />
+      )}
     </div>
   );
 }
 
 export default function MonthlyPage() {
+  const { toast, showToast, hideToast } = useToast();
+
   return (
-    <Suspense>
-      <MonthlyContent />
-    </Suspense>
+    <>
+      <Suspense>
+        <MonthlyContent showToast={showToast} />
+      </Suspense>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
+    </>
   );
 }

@@ -13,7 +13,12 @@ type Props = {
   onClose: () => void;
 };
 
-export function Toast({ message, type = 'success', duration = 3000, onClose }: Props) {
+export function Toast({
+  message,
+  type = 'success',
+  duration = 3000,
+  onClose,
+}: Props) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -41,7 +46,10 @@ export function Toast({ message, type = 'success', duration = 3000, onClose }: P
         <XCircle size={16} className="text-red-500" />
       )}
       <span>{message}</span>
-      <button onClick={onClose} className="ml-2 text-gray-400 hover:text-gray-600">
+      <button
+        onClick={onClose}
+        className="ml-2 text-gray-400 hover:text-gray-600"
+      >
         <X size={14} />
       </button>
     </div>
@@ -49,7 +57,10 @@ export function Toast({ message, type = 'success', duration = 3000, onClose }: P
 }
 
 export function useToast() {
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: ToastType;
+  } | null>(null);
 
   const showToast = (message: string, type: ToastType = 'success') => {
     setToast({ message, type });
